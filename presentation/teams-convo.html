@@ -2,489 +2,321 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teams – #qa-dev-sync</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f5f5f5;
+    display: flex; justify-content: center; align-items: flex-start;
+    padding: 0;
+  }
 
-  .teams-window {
-    width: 960px;
+  .window {
+    width: 780px;
     background: #fff;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    min-height: 860px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.18);
-  }
-
-  /* ── Title bar ── */
-  .title-bar {
-    background: #464775;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    height: 40px;
-    flex-shrink: 0;
-    gap: 8px;
-  }
-  .title-bar .app-name { font-size: 13px; font-weight: 600; flex: 1; }
-  .title-bar .win-btn { width: 12px; height: 12px; border-radius: 50%; }
-  .win-close { background: #ff5f57; }
-  .win-min { background: #ffbd2e; }
-  .win-max { background: #28c840; }
-
-  /* ── Layout ── */
-  .layout { display: flex; flex: 1; overflow: hidden; }
-
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 68px;
-    background: #33344a;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 12px 0;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .sidebar-icon {
-    width: 40px; height: 40px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: rgba(255,255,255,0.7);
-    font-size: 18px;
-  }
-  .sidebar-icon.active { background: rgba(255,255,255,0.15); color: #fff; }
-  .sidebar-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: #6264a7; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 12px; font-weight: 700; margin-top: auto; margin-bottom: 8px;
-  }
-
-  /* ── Channel list ── */
-  .channel-list {
-    width: 240px;
-    background: #f3f2f1;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
     display: flex; flex-direction: column;
-    overflow-y: auto; flex-shrink: 0;
-    border-right: 1px solid #e1dfdd;
-  }
-  .team-header {
-    padding: 12px 14px 6px;
-    font-size: 11px; font-weight: 700; color: #616161; text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .team-name {
-    display: flex; align-items: center; gap-8px; padding: 6px 14px;
-    font-size: 14px; font-weight: 700; color: #242424; cursor: pointer;
-    gap: 6px;
-  }
-  .team-name .chevron { font-size: 10px; color: #616161; }
-  .channel-item {
-    display: flex; align-items: center; padding: 5px 14px 5px 28px;
-    font-size: 13px; color: #424242; cursor: pointer; gap: 6px;
-  }
-  .channel-item:hover { background: rgba(0,0,0,0.06); }
-  .channel-item.active { background: #e8e6f0; color: #464775; font-weight: 600; }
-  .channel-item .hash { color: #616161; font-size: 14px; }
-  .unread-dot {
-    margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: #d92c2c; flex-shrink: 0;
   }
 
-  /* ── Chat area ── */
-  .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-  .chat-header {
-    padding: 0 20px;
-    height: 56px;
-    border-bottom: 1px solid #e1dfdd;
-    display: flex; align-items: center; gap: 10px;
-    flex-shrink: 0;
-  }
-  .chat-header .channel-title { font-size: 16px; font-weight: 700; color: #242424; }
-  .chat-header .channel-desc { font-size: 12px; color: #616161; margin-left: 4px; }
-  .header-actions { margin-left: auto; display: flex; gap: 8px; }
-  .header-btn {
-    padding: 4px 10px; border-radius: 4px; border: 1px solid #d1d1d1;
-    font-size: 12px; color: #424242; cursor: pointer; background: #fff;
-  }
-
-  /* ── Messages ── */
-  .messages { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 2px; }
-
-  .date-divider {
-    display: flex; align-items: center; gap: 10px; margin: 16px 0 10px;
-    font-size: 11px; color: #616161; font-weight: 600;
-  }
-  .date-divider::before, .date-divider::after {
-    content: ''; flex: 1; height: 1px; background: #e1dfdd;
-  }
-
-  .msg-group { display: flex; gap: 10px; margin-bottom: 2px; }
-  .msg-group.continued { margin-top: 1px; }
-
-  .avatar {
-    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: #fff; margin-top: 2px;
-  }
-  .avatar-placeholder { width: 34px; flex-shrink: 0; }
-
-  .msg-body { flex: 1; }
-  .msg-meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
-  .msg-author { font-size: 13px; font-weight: 700; color: #242424; }
-  .msg-author.qa { color: #d92c2c; }
-  .msg-author.dev { color: #0f6cbd; }
-  .msg-author.dev2 { color: #107c10; }
-  .msg-author.pm { color: #8764b8; }
-  .msg-time { font-size: 11px; color: #616161; }
-  .msg-role { font-size: 10px; color: #fff; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
-  .role-qa { background: #d92c2c; }
-  .role-dev { background: #0f6cbd; }
-  .role-pm { background: #8764b8; }
-
-  .msg-text {
-    font-size: 14px; color: #242424; line-height: 1.5;
-    padding: 2px 0;
-  }
-  .msg-text.continued { margin-left: 0; }
-
-  .msg-bubble {
-    background: #f5f5f5; border-radius: 8px; padding: 10px 14px;
-    font-size: 14px; color: #242424; line-height: 1.5;
-    border-left: 3px solid #e1dfdd; margin: 2px 0;
-  }
-
-  .emoji { font-size: 16px; }
-  .urgent { color: #d92c2c; font-weight: 700; }
-  .ghost-text { color: #6264a7; font-weight: 700; }
-
-  .system-msg {
+  /* title bar */
+  .titlebar {
+    background: #464775; color: #fff;
     display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: #616161; font-style: italic;
-    padding: 6px 0; margin: 4px 0;
+    padding: 0 14px; height: 36px; flex-shrink: 0;
   }
-  .system-msg::before { content: '—'; }
+  .win-btns { display: flex; gap: 5px; margin-right: 8px; }
+  .wb { width: 11px; height: 11px; border-radius: 50%; }
+  .titlebar .app { font-size: 12px; font-weight: 600; flex: 1; }
+  .titlebar .chan { font-size: 11px; opacity: 0.7; }
 
-  .away-indicator {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 12px; color: #797775; background: #faf9f8;
-    border: 1px solid #e1dfdd; border-radius: 12px; padding: 2px 8px;
-  }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .status-away { background: #f7630c; }
-  .status-online { background: #92c353; }
+  /* layout */
+  .body { display: flex; flex: 1; overflow: hidden; }
 
-  .reaction {
-    display: inline-flex; align-items: center; gap-3px; gap: 3px;
-    background: #f3f2f1; border: 1px solid #e1dfdd; border-radius: 12px;
-    padding: 2px 8px; font-size: 13px; cursor: pointer; margin-top: 4px;
-    color: #424242;
+  /* sidebar */
+  .sidebar {
+    width: 52px; background: #33344a;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 10px 0; gap: 2px; flex-shrink: 0;
   }
-  .reaction-count { font-size: 11px; font-weight: 600; }
-
-  .typing-indicator {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; color: #616161; padding: 4px 0;
+  .si {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: rgba(255,255,255,0.55);
   }
-  .typing-dots { display: flex; gap: 3px; }
-  .typing-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: #616161;
-    opacity: 0.5;
+  .si.on { background: rgba(255,255,255,0.14); color: #fff; }
+  .sav {
+    margin-top: auto; margin-bottom: 6px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #6264a7; color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  .code-block {
-    background: #f8f8f8; border: 1px solid #e1dfdd; border-radius: 4px;
-    padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 12px;
-    color: #242424; margin: 4px 0;
+  /* channel list */
+  .channels {
+    width: 200px; background: #f3f2f1;
+    border-right: 1px solid #e1dfdd;
+    flex-shrink: 0; padding: 8px 0;
+  }
+  .ch-section { font-size: 10px; font-weight: 700; color: #616161; text-transform: uppercase; letter-spacing: 0.4px; padding: 8px 12px 4px; }
+  .ch-team { font-size: 13px; font-weight: 700; color: #242424; padding: 4px 12px; cursor: pointer; }
+  .ch-item {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 12px 4px 22px; font-size: 12px; color: #424242; cursor: pointer;
+  }
+  .ch-item.active { background: #e8e6f0; color: #464775; font-weight: 600; }
+  .ch-item .hash { font-size: 13px; color: #888; }
+  .unread { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #d92c2c; }
+
+  /* chat */
+  .chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-head {
+    height: 48px; padding: 0 16px; border-bottom: 1px solid #e1dfdd;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+  }
+  .chat-head .title { font-size: 14px; font-weight: 700; }
+  .chat-head .desc { font-size: 11px; color: #616161; }
+
+  /* messages */
+  .msgs { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 1px; }
+
+  .divider {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: #888; font-weight: 600; margin: 10px 0 6px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e8e8e8; }
+
+  .msg { display: flex; gap: 8px; padding: 2px 0; }
+  .av {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; margin-top: 1px;
+  }
+  .av-ph { width: 30px; flex-shrink: 0; }
+  .mc { flex: 1; min-width: 0; }
+  .mm {
+    display: flex; align-items: baseline; gap: 6px; margin-bottom: 1px;
+  }
+  .name { font-size: 12px; font-weight: 700; }
+  .name.qa { color: #c50f1f; }
+  .name.dev { color: #0f6cbd; }
+  .name.dev2 { color: #107c10; }
+  .role {
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 8px; color: #fff;
+  }
+  .r-qa { background: #c50f1f; }
+  .r-dev { background: #0f6cbd; }
+  .ts { font-size: 10px; color: #888; }
+  .mt { font-size: 12.5px; color: #242424; line-height: 1.45; }
+  .mt b { font-weight: 700; }
+
+  .rxn {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #f3f2f1; border: 1px solid #e1dfdd; border-radius: 10px;
+    padding: 1px 7px; font-size: 12px; color: #424242;
+    cursor: pointer; margin-top: 3px;
+  }
+  .rxn span { font-size: 10px; font-weight: 700; }
+
+  .sys {
+    font-size: 11px; color: #888; font-style: italic;
+    padding: 4px 0 4px 38px;
+  }
+  .sys::before { content: '— '; }
+
+  /* compose */
+  .compose { border-top: 1px solid #e1dfdd; padding: 10px 16px; flex-shrink: 0; }
+  .cbox {
+    border: 1px solid #d1d1d1; border-radius: 4px; padding: 8px 12px;
+    font-size: 13px; color: #aaa; display: flex; justify-content: space-between;
   }
 
-  /* ── Compose box ── */
-  .compose {
-    border-top: 1px solid #e1dfdd;
-    padding: 12px 20px;
-    flex-shrink: 0;
+  /* solution banner */
+  .banner {
+    background: linear-gradient(135deg, #002a6b 0%, #0e6bad 100%);
+    border-radius: 8px; padding: 14px 16px; margin: 10px 0 4px;
+    display: flex; align-items: center; gap: 14px; color: #fff;
   }
-  .compose-box {
-    border: 1px solid #d1d1d1; border-radius: 4px; padding: 10px 14px;
-    font-size: 14px; color: #bbb; background: #fff; display: flex; align-items: center;
-    justify-content: space-between;
-  }
-
-  /* ── Intro banner ── */
-  .problem-banner {
-    background: linear-gradient(135deg, #464775 0%, #6264a7 100%);
-    color: #fff; padding: 16px 20px; text-align: center; flex-shrink: 0;
-  }
-  .problem-banner h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-  .problem-banner p { font-size: 12px; opacity: 0.85; margin-top: 4px; }
-
-  /* ── Solution callout ── */
-  .solution-callout {
-    margin: 0 20px 16px;
-    background: linear-gradient(135deg, #002a6b, #0e6bad);
-    border-radius: 10px;
-    padding: 16px 20px;
-    color: #fff;
-    display: flex; align-items: center; gap: 16px;
-  }
-  .solution-callout .ghost-logo {
-    font-size: 36px; flex-shrink: 0;
-  }
-  .solution-callout h3 { font-size: 16px; font-weight: 700; }
-  .solution-callout p { font-size: 13px; opacity: 0.9; margin-top: 4px; line-height: 1.5; }
+  .banner-ghost { font-size: 32px; flex-shrink: 0; }
+  .banner h3 { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+  .banner p { font-size: 11px; opacity: 0.9; line-height: 1.5; }
 </style>
 </head>
 <body>
-<div class="teams-window">
+<div class="window">
 
-  <!-- Title bar -->
-  <div class="title-bar">
-    <div style="display:flex;gap:6px;margin-right:12px">
-      <div class="win-btn win-close"></div>
-      <div class="win-btn win-min"></div>
-      <div class="win-btn win-max"></div>
+  <div class="titlebar">
+    <div class="win-btns">
+      <div class="wb" style="background:#ff5f57"></div>
+      <div class="wb" style="background:#ffbd2e"></div>
+      <div class="wb" style="background:#28c840"></div>
     </div>
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0">
-      <rect x="1" y="1" width="7" height="7" rx="1.5" fill="#5059c9"/>
-      <rect x="10" y="1" width="7" height="7" rx="1.5" fill="#7b83eb"/>
-      <rect x="1" y="10" width="7" height="7" rx="1.5" fill="#7b83eb"/>
-      <rect x="10" y="10" width="7" height="7" rx="1.5" fill="#5059c9"/>
-    </svg>
-    <span class="app-name">Microsoft Teams — JPMorgan Chase</span>
-    <span style="font-size:11px;opacity:0.7">#qa-dev-sync · 5 members</span>
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="7" height="7" rx="1.5" fill="#5059c9"/><rect x="10" y="1" width="7" height="7" rx="1.5" fill="#7b83eb"/><rect x="1" y="10" width="7" height="7" rx="1.5" fill="#7b83eb"/><rect x="10" y="10" width="7" height="7" rx="1.5" fill="#5059c9"/></svg>
+    <span class="app">Microsoft Teams — JPMorgan Chase</span>
+    <span class="chan">#qa-dev-sync · 5 members</span>
   </div>
 
-  <div class="layout">
+  <div class="body">
 
-    <!-- Sidebar icons -->
     <div class="sidebar">
-      <div class="sidebar-icon">🏠</div>
-      <div class="sidebar-icon">💬</div>
-      <div class="sidebar-icon active">👥</div>
-      <div class="sidebar-icon">📅</div>
-      <div class="sidebar-icon">📁</div>
-      <div class="sidebar-icon">···</div>
-      <div class="sidebar-avatar">RK</div>
+      <div class="si">🏠</div>
+      <div class="si">💬</div>
+      <div class="si on">👥</div>
+      <div class="si">📅</div>
+      <div class="si">📁</div>
+      <div class="sav">RK</div>
     </div>
 
-    <!-- Channel list -->
-    <div class="channel-list">
-      <div class="team-header">Your Teams</div>
-      <div class="team-name"><span class="chevron">▾</span> Retail Banking — Dev</div>
-      <div class="channel-item"><span class="hash">#</span> general</div>
-      <div class="channel-item"><span class="hash">#</span> announcements</div>
-      <div class="channel-item active"><span class="hash">#</span> qa-dev-sync <span class="unread-dot"></span></div>
-      <div class="channel-item"><span class="hash">#</span> releases</div>
-      <div class="channel-item"><span class="hash">#</span> incidents</div>
-      <div style="height:12px"></div>
-      <div class="team-name"><span class="chevron">▾</span> Core Platform</div>
-      <div class="channel-item"><span class="hash">#</span> general</div>
-      <div class="channel-item"><span class="hash">#</span> backend-api</div>
+    <div class="channels">
+      <div class="ch-section">Your Teams</div>
+      <div class="ch-team">▾ Retail Banking — Dev</div>
+      <div class="ch-item"><span class="hash">#</span> general</div>
+      <div class="ch-item"><span class="hash">#</span> announcements</div>
+      <div class="ch-item active"><span class="hash">#</span> qa-dev-sync <span class="unread"></span></div>
+      <div class="ch-item"><span class="hash">#</span> releases</div>
+      <div class="ch-item"><span class="hash">#</span> incidents</div>
     </div>
 
-    <!-- Chat area -->
-    <div class="chat-area">
-      <div class="chat-header">
-        <span style="font-size:18px">🔔</span>
+    <div class="chat">
+      <div class="chat-head">
+        <span style="font-size:16px">🔔</span>
         <div>
-          <span class="channel-title">#qa-dev-sync</span>
-          <span class="channel-desc">QA ↔ Dev coordination · Tax &amp; Banking forms</span>
-        </div>
-        <div class="header-actions">
-          <button class="header-btn">🔍 Search</button>
-          <button class="header-btn">📌 Pinned</button>
-          <button class="header-btn">⋯</button>
+          <div class="title">#qa-dev-sync</div>
+          <div class="desc">QA ↔ Dev coordination</div>
         </div>
       </div>
 
-      <div class="messages">
-
-        <div class="date-divider">Today · June 10, 2025</div>
-
-        <!-- Rachel (QA) - urgent alert -->
-        <div class="msg-group">
-          <div class="avatar" style="background:#d92c2c">RK</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author qa">Rachel Kim</span>
-              <span class="msg-role role-qa">QA Lead</span>
-              <span class="msg-time">9:02 AM</span>
-            </div>
-            <div class="msg-text"><span class="urgent">🚨 URGENT</span> — Prod issue found! Tax form Q4 calculations are wrong. Client totals don't match. Need a dev ASAP 😰</div>
-            <div class="msg-text" style="margin-top:4px">Seeing discrepancies in about 30 submissions. This is affecting <strong>real customers</strong>.</div>
-            <div style="display:flex;gap:6px;margin-top:6px">
-              <span class="reaction">😱 <span class="reaction-count">3</span></span>
-              <span class="reaction">🔥 <span class="reaction-count">2</span></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Jake (Dev1) -->
-        <div class="msg-group" style="margin-top:10px">
-          <div class="avatar" style="background:#0f6cbd">JM</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev">Jake Mitchell</span>
-              <span class="msg-role role-dev">Dev</span>
-              <span class="msg-time">9:04 AM</span>
-            </div>
-            <div class="msg-text">On it. Can you share the actual statement? I need to see the raw data to debug this.</div>
-          </div>
-        </div>
+      <div class="msgs">
+        <div class="divider">Today · June 10, 2025</div>
 
         <!-- Rachel -->
-        <div class="msg-group" style="margin-top:8px">
-          <div class="avatar" style="background:#d92c2c">RK</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author qa">Rachel Kim</span>
-              <span class="msg-time">9:05 AM</span>
+        <div class="msg">
+          <div class="av" style="background:#c50f1f">RK</div>
+          <div class="mc">
+            <div class="mm">
+              <span class="name qa">Rachel Kim</span>
+              <span class="role r-qa">QA Lead</span>
+              <span class="ts">9:02 AM</span>
             </div>
-            <div class="msg-text">Yeah I have it right here... <span class="emoji">😬</span></div>
-            <div class="msg-text" style="margin-top:4px">...oh wait. It has PII data. SSNs, account numbers, the whole thing. I <strong>cannot</strong> share this as-is.</div>
+            <div class="mt">🚨 <b>URGENT</b> — Prod issue! Tax form Q4 calculations are wrong. Need a dev ASAP 😰</div>
+            <div style="display:flex;gap:5px;margin-top:3px">
+              <span class="rxn">😱 <span>3</span></span>
+              <span class="rxn">🔥 <span>2</span></span>
+            </div>
           </div>
         </div>
 
         <!-- Jake -->
-        <div class="msg-group" style="margin-top:8px">
-          <div class="avatar" style="background:#0f6cbd">JM</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev">Jake Mitchell</span>
-              <span class="msg-time">9:06 AM</span>
-            </div>
-            <div class="msg-text">Just... blur it in Paint? <span class="emoji">🙃</span></div>
+        <div class="msg" style="margin-top:6px">
+          <div class="av" style="background:#0f6cbd">JM</div>
+          <div class="mc">
+            <div class="mm"><span class="name dev">Jake Mitchell</span><span class="role r-dev">Dev</span><span class="ts">9:04 AM</span></div>
+            <div class="mt">On it. Share the statement so I can debug.</div>
           </div>
         </div>
 
-        <!-- Rachel reaction -->
-        <div class="msg-group" style="margin-top:8px">
-          <div class="avatar" style="background:#d92c2c">RK</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author qa">Rachel Kim</span>
-              <span class="msg-time">9:07 AM</span>
-            </div>
-            <div class="msg-text">Jake. I am NOT blurring a customer's SSN in Paint and emailing it to you 😤</div>
-            <div class="msg-text" style="margin-top:4px">Let me find a proper redaction tool. Give me like... 20 minutes.</div>
+        <!-- Rachel -->
+        <div class="msg" style="margin-top:6px">
+          <div class="av" style="background:#c50f1f">RK</div>
+          <div class="mc">
+            <div class="mm"><span class="name qa">Rachel Kim</span><span class="ts">9:05 AM</span></div>
+            <div class="mt">Yeah I have it right here… oh wait. It has PII. SSNs, account numbers — I <b>cannot</b> share this. 😬</div>
           </div>
         </div>
 
-        <!-- Dev2 Priya -->
-        <div class="msg-group" style="margin-top:8px">
-          <div class="avatar" style="background:#107c10">PS</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev2">Priya Sharma</span>
-              <span class="msg-role role-dev">Dev</span>
-              <span class="msg-time">9:08 AM</span>
-            </div>
-            <div class="msg-text">Lol "20 minutes" 👀 I once spent 2 hours trying to redact a PDF with Adobe. Good luck Rachel.</div>
-            <div style="display:flex;gap:6px;margin-top:6px">
-              <span class="reaction">💀 <span class="reaction-count">4</span></span>
-            </div>
+        <!-- Jake -->
+        <div class="msg" style="margin-top:6px">
+          <div class="av" style="background:#0f6cbd">JM</div>
+          <div class="mc">
+            <div class="mm"><span class="name dev">Jake Mitchell</span><span class="ts">9:06 AM</span></div>
+            <div class="mt">Just… blur it in Paint? 🙃</div>
           </div>
         </div>
 
-        <div class="date-divider" style="margin-top:12px">— 40 minutes later —</div>
-
-        <!-- Jake checking in -->
-        <div class="msg-group">
-          <div class="avatar" style="background:#0f6cbd">JM</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev">Jake Mitchell</span>
-              <span class="msg-time">9:48 AM</span>
-            </div>
-            <div class="msg-text">Rachel? Still there? <span class="emoji">👋</span></div>
+        <!-- Rachel -->
+        <div class="msg" style="margin-top:6px">
+          <div class="av" style="background:#c50f1f">RK</div>
+          <div class="mc">
+            <div class="mm"><span class="name qa">Rachel Kim</span><span class="ts">9:07 AM</span></div>
+            <div class="mt">Jake I am NOT blurring a customer's SSN in Paint 😤<br>Give me 20 mins — I'll find a proper redaction tool.</div>
           </div>
         </div>
 
-        <!-- System message -->
-        <div class="system-msg">Rachel Kim set her status to Away</div>
+        <div class="divider">— 40 minutes later —</div>
 
-        <div class="date-divider" style="margin-top:8px">— 1 hour later —</div>
+        <!-- Jake -->
+        <div class="msg">
+          <div class="av" style="background:#0f6cbd">JM</div>
+          <div class="mc">
+            <div class="mm"><span class="name dev">Jake Mitchell</span><span class="ts">9:48 AM</span></div>
+            <div class="mt">Rachel? 👋</div>
+          </div>
+        </div>
 
-        <!-- Jake again -->
-        <div class="msg-group">
-          <div class="avatar" style="background:#0f6cbd">JM</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev">Jake Mitchell</span>
-              <span class="msg-time">10:52 AM</span>
-            </div>
-            <div class="msg-text">Rachel?? The client is calling us <span class="emoji">📞</span></div>
-            <div class="msg-text" style="margin-top:4px">...Rachel are you ghosting me rn</div>
+        <div class="sys">Rachel Kim set her status to 🟠 Away</div>
+
+        <div class="divider">— 2 hours later —</div>
+
+        <!-- Jake -->
+        <div class="msg">
+          <div class="av" style="background:#0f6cbd">JM</div>
+          <div class="mc">
+            <div class="mm"><span class="name dev">Jake Mitchell</span><span class="ts">11:53 AM</span></div>
+            <div class="mt">Rachel?? The client is calling 📞<br>…are you literally ghosting me rn 👻</div>
           </div>
         </div>
 
         <!-- Priya -->
-        <div class="msg-group" style="margin-top:8px">
-          <div class="avatar" style="background:#107c10">PS</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author dev2">Priya Sharma</span>
-              <span class="msg-time">10:53 AM</span>
-            </div>
-            <div class="msg-text">She's not ghosting you Jake, she's redacting 💀</div>
-            <div class="msg-text" style="margin-top:4px">Same thing at this point</div>
-            <div style="display:flex;gap:6px;margin-top:6px">
-              <span class="reaction">😂 <span class="reaction-count">6</span></span>
-              <span class="reaction">👻 <span class="reaction-count">5</span></span>
+        <div class="msg" style="margin-top:6px">
+          <div class="av" style="background:#107c10">PS</div>
+          <div class="mc">
+            <div class="mm"><span class="name dev2">Priya Sharma</span><span class="role r-dev">Dev</span><span class="ts">11:54 AM</span></div>
+            <div class="mt">She's not ghosting you Jake, she's <i>redacting</i> 💀<br>Same thing at this point.</div>
+            <div style="display:flex;gap:5px;margin-top:3px">
+              <span class="rxn">😂 <span>6</span></span>
+              <span class="rxn">👻 <span>5</span></span>
             </div>
           </div>
         </div>
 
-        <!-- System: Rachel still away -->
-        <div class="system-msg">Rachel Kim has not responded · Last seen 9:12 AM</div>
+        <div class="sys">Rachel Kim has not responded · Last seen 9:12 AM</div>
 
-        <div class="date-divider" style="margin-top:8px">— 2 hours later —</div>
+        <div class="divider">— 4 hours later —</div>
 
-        <!-- Rachel finally -->
-        <div class="msg-group">
-          <div class="avatar" style="background:#d92c2c">RK</div>
-          <div class="msg-body">
-            <div class="msg-meta">
-              <span class="msg-author qa">Rachel Kim</span>
-              <span class="msg-time">1:14 PM</span>
-            </div>
-            <div class="msg-text"><span class="emoji">👻</span> I'm back. Spent 4 hours on Adobe Acrobat. Redacted 3 pages. There are 47 pages.</div>
-            <div class="msg-text" style="margin-top:4px">There has to be a better way to do this.</div>
-            <div style="display:flex;gap:6px;margin-top:6px">
-              <span class="reaction">😭 <span class="reaction-count">7</span></span>
-              <span class="reaction">🫂 <span class="reaction-count">3</span></span>
+        <!-- Rachel returns -->
+        <div class="msg">
+          <div class="av" style="background:#c50f1f">RK</div>
+          <div class="mc">
+            <div class="mm"><span class="name qa">Rachel Kim</span><span class="ts">1:14 PM</span></div>
+            <div class="mt">👻 I'm back. Done 3 pages. There are 47.</div>
+            <div style="display:flex;gap:5px;margin-top:3px">
+              <span class="rxn">😭 <span>7</span></span>
+              <span class="rxn">🫂 <span>4</span></span>
             </div>
           </div>
         </div>
 
-        <!-- Solution callout -->
-        <div style="margin-top:20px">
-          <div class="solution-callout">
-            <div class="ghost-logo">👻</div>
-            <div>
-              <h3>Introducing Ghost Studio — Stop ghosting your team.</h3>
-              <p>Upload any banking document → PII auto-detected in seconds → share the redacted version instantly.<br>
-              SSNs, account numbers, credit cards, names — all gone. No Acrobat. No Paint. No 4-hour rabbit holes.</p>
-            </div>
+        <!-- Solution -->
+        <div class="banner">
+          <div class="banner-ghost">👻</div>
+          <div>
+            <h3>Introducing Ghost Studio — Stop ghosting your team.</h3>
+            <p>Upload any banking doc → PII auto-detected in seconds → share the redacted version instantly.<br>No Acrobat. No Paint. No 4-hour rabbit holes.</p>
           </div>
         </div>
 
-      </div><!-- /messages -->
+      </div><!-- /msgs -->
 
-      <!-- Compose -->
       <div class="compose">
-        <div class="compose-box">
-          <span>Reply to #qa-dev-sync...</span>
-          <div style="display:flex;gap:12px;color:#616161;font-size:16px">
-            <span>😊</span><span>📎</span><span>🎤</span>
-          </div>
+        <div class="cbox">
+          <span>Reply to #qa-dev-sync…</span>
+          <div style="display:flex;gap:10px;color:#888;font-size:15px"><span>😊</span><span>📎</span></div>
         </div>
       </div>
-    </div><!-- /chat-area -->
+    </div><!-- /chat -->
 
-  </div><!-- /layout -->
-</div><!-- /teams-window -->
+  </div><!-- /body -->
+</div><!-- /window -->
 </body>
 </html>
