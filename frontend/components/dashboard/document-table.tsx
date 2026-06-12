@@ -57,7 +57,7 @@ function formatDate(iso: string) {
 
 // ── Column definitions ──────────────────────────────────────────────────────
 
-type ColId = "actions" | "document" | "type" | "status" | "pii_found" | "ai_cost" | "pages" | "date";
+type ColId = "actions" | "document" | "type" | "status" | "pii_found" | "tokens" | "ai_cost" | "pages" | "date";
 type SortDir = "asc" | "desc";
 
 interface ColDef {
@@ -73,6 +73,7 @@ const COLUMN_DEFS: ColDef[] = [
   { id: "type",      label: "Type",      sortKey: "doc_type" },
   { id: "status",    label: "Status",    sortKey: "status" },
   { id: "pii_found", label: "PII Found", sortKey: "pii_found" },
+  { id: "tokens",    label: "Tokens",    sortKey: "tokens_used" },
   { id: "ai_cost",   label: "AI Cost",   sortKey: "redaction_cost" },
   { id: "pages",     label: "Pages",     sortKey: "page_count" },
   { id: "date",      label: "Date",      sortKey: "created_at" },
@@ -572,19 +573,25 @@ export default function DocumentTable({ documents, loading }: Props) {
                           )}
                         </td>
                       );
+                      if (col.id === "tokens") return (
+                        <td key="tokens" className="px-3 py-3.5">
+                          {doc.tokens_used > 0 ? (
+                            <span className="text-xs font-semibold text-blue-700">
+                              {doc.tokens_used.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      );
                       if (col.id === "ai_cost") return (
                         <td key="ai_cost" className="px-3 py-3.5">
-                          {doc.tokens_used > 0 ? (
-                            <div>
-                              <span className="text-xs font-semibold text-emerald-700">
-                                ${doc.redaction_cost < 0.001
-                                  ? doc.redaction_cost.toFixed(6)
-                                  : doc.redaction_cost.toFixed(4)}
-                              </span>
-                              <p className="text-xs text-muted-foreground leading-none mt-0.5">
-                                {doc.tokens_used.toLocaleString()} tok
-                              </p>
-                            </div>
+                          {doc.redaction_cost > 0 ? (
+                            <span className="text-xs font-semibold text-emerald-700">
+                              ${doc.redaction_cost < 0.001
+                                ? doc.redaction_cost.toFixed(6)
+                                : doc.redaction_cost.toFixed(4)}
+                            </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
