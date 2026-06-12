@@ -92,10 +92,14 @@ def redact_document(doc_id: str, req: RedactRequest = RedactRequest()):
         pages_text = extract_pages_text(pdf_bytes)
         matches = detect_pii(pages_text, pii_types, use_llm=req.use_llm)
 
-        policy = store.get_policy(doc.policy_id or "") if doc.policy_id else None
-        style = policy.redaction_style if policy else None  # type: ignore[union-attr]
+        # Style precedence: explicit request > policy default > BLACK_BOX
+        from ..models import RedactionStyle
+        policy = store.get_policy(req.policy_id or doc.policy_id or "") if (req.policy_id or doc.policy_id) else None
+        style = req.redaction_style
+        if style == RedactionStyle.BLACK_BOX and policy and policy.redaction_style != RedactionStyle.BLACK_BOX:
+            style = policy.redaction_style
 
-        redacted = redact_pdf(pdf_bytes, matches, style) if matches else pdf_bytes
+        redacted = redact_pdf(pdf_bytes, matches, style, req.mask_char, req.visible_suffix) if matches else pdf_bytes
 
         store.save_redacted(doc_id, redacted)
 
