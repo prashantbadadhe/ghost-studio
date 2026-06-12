@@ -103,6 +103,15 @@ class DocumentRecord(BaseModel):
     redaction_cost: float = 0.0   # USD cost of the OpenAI call
 
 
+class CustomField(BaseModel):
+    name: str = "Custom Field"
+    pattern: str                                    # regex or plain keyword
+    is_regex: bool = True
+    redaction_style: RedactionStyle = RedactionStyle.BLACK_BOX
+    mask_char: str = "*"
+    visible_suffix: int = 4
+
+
 class RedactRequest(BaseModel):
     policy_id: str | None = None
     pii_types: list[PIIType] | None = None
@@ -110,6 +119,7 @@ class RedactRequest(BaseModel):
     redaction_style: RedactionStyle = RedactionStyle.BLACK_BOX
     mask_char: str = "*"
     visible_suffix: int = 4
+    custom_fields: list[CustomField] = []
 
 
 class PolicyImportRequest(BaseModel):

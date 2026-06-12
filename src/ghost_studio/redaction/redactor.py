@@ -5,7 +5,7 @@ import re
 import base64
 import logging
 import fitz
-from ..models import PIIMatch, RedactionStyle
+from ..models import PIIMatch, RedactionStyle, CustomField
 
 log = logging.getLogger(__name__)
 
@@ -133,6 +133,54 @@ def redact_pdf(
                 )
 
         page.apply_redactions()
+
+    buf = io.BytesIO()
+    doc.save(buf, garbage=4, deflate=True)
+    return buf.getvalue()
+
+
+def redact_custom_fields(pdf_bytes: bytes, custom_fields: list[CustomField]) -> bytes:
+    """Apply per-field custom redactions on top of an already-processed PDF."""
+    if not custom_fields:
+        return pdf_bytes
+
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+
+    for cf in custom_fields:
+        if not cf.pattern.strip():
+            continue
+        for page in doc:
+            page_text = page.get_text()
+
+            # Collect match values
+            values: list[str] = []
+            if cf.is_regex:
+                try:
+                    for m in re.finditer(cf.pattern, page_text):
+                        v = m.group().strip()
+                        if v:
+                            values.append(v)
+                except re.error:
+                    log.warning("Invalid regex in custom field '%s': %s", cf.name, cf.pattern)
+                    continue
+            else:
+                if cf.pattern in page_text:
+                    values.append(cf.pattern)
+
+            for val in values:
+                for rect in page.search_for(val):
+                    if cf.redaction_style == RedactionStyle.BLACK_BOX:
+                        page.add_redact_annot(rect, fill=_BLACK)
+                    elif cf.redaction_style == RedactionStyle.LABEL:
+                        label = f"[{cf.name.upper()}]"
+                        page.add_redact_annot(rect, text=label, fontsize=7, fill=_NAVY, text_color=_WHITE)
+                    elif cf.redaction_style == RedactionStyle.ASTERISK:
+                        page.add_redact_annot(rect, text=_mask_asterisk(val, cf.mask_char), fontsize=8, fill=_DARK, text_color=_WHITE)
+                    elif cf.redaction_style == RedactionStyle.LAST_FOUR:
+                        page.add_redact_annot(rect, text=_mask_last_four(val, cf.mask_char, cf.visible_suffix), fontsize=8, fill=_DARK, text_color=_WHITE)
+                    elif cf.redaction_style == RedactionStyle.X_MASK:
+                        page.add_redact_annot(rect, text=_mask_x(val), fontsize=8, fill=_DARK, text_color=_WHITE)
+            page.apply_redactions()
 
     buf = io.BytesIO()
     doc.save(buf, garbage=4, deflate=True)

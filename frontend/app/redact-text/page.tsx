@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { redactText } from "@/lib/api";
-import { PII_TYPE_LABELS, REDACTION_STYLE_LABELS, type PIIType, type RedactionStyle } from "@/lib/types";
+import { PII_TYPE_LABELS, REDACTION_STYLE_LABELS, type PIIType, type RedactionStyle, type CustomField } from "@/lib/types";
+import CustomFieldsEditor from "@/components/custom-fields-editor";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -36,6 +37,7 @@ export default function TextRedactPage() {
   const [maskChar, setMaskChar] = useState("*");
   const [visibleSuffix, setVisibleSuffix] = useState(4);
   const [useLLM, setUseLLM] = useState(false);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [showAllPII, setShowAllPII] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
 
@@ -48,6 +50,7 @@ export default function TextRedactPage() {
         mask_char: maskChar,
         visible_suffix: visibleSuffix,
         use_llm: useLLM,
+        custom_fields: customFields.map(({ _id, ...cf }) => cf),
       }),
     onSuccess: (data) => {
       setRedactedText(data.redacted_text);
@@ -282,6 +285,11 @@ export default function TextRedactPage() {
                   </div>
                 </button>
               </div>
+            </div>
+
+            {/* Custom Fields */}
+            <div className="p-4 border-t border-border">
+              <CustomFieldsEditor fields={customFields} onChange={setCustomFields} />
             </div>
 
             {/* Findings summary */}

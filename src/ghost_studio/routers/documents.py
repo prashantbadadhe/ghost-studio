@@ -10,7 +10,7 @@ from ..models import (
 from ..storage import store
 from ..pii.detector import detect_pii
 from ..redaction.redactor import (
-    extract_pages_text, get_page_count, render_page_b64, redact_pdf
+    extract_pages_text, get_page_count, render_page_b64, redact_pdf, redact_custom_fields
 )
 
 router = APIRouter()
@@ -100,6 +100,8 @@ def redact_document(doc_id: str, req: RedactRequest = RedactRequest()):
             style = policy.redaction_style
 
         redacted = redact_pdf(pdf_bytes, matches, style, req.mask_char, req.visible_suffix) if matches else pdf_bytes
+        if req.custom_fields:
+            redacted = redact_custom_fields(redacted, req.custom_fields)
 
         store.save_redacted(doc_id, redacted)
 

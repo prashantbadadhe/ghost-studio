@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .routers import documents, policies, stats
-from .models import PIIType, RedactionStyle
+from .models import PIIType, RedactionStyle, CustomField
 from .pii.patterns import PATTERNS
 from .pii.detector import detect_with_openai
 
@@ -40,10 +40,11 @@ def health():
 class TextRedactRequest(BaseModel):
     text: str
     pii_types: list[PIIType] = [p for p in PIIType]
-    redaction_style: RedactionStyle = RedactionStyle.BLACK_BOX
+    redaction_style: RedactionStyle = RedactionStyle.LABEL
     mask_char: str = "*"
     visible_suffix: int = 4
     use_llm: bool = False
+    custom_fields: list[CustomField] = []
 
 
 _STYLE_LABELS = {
@@ -55,6 +56,22 @@ _STYLE_LABELS = {
     PIIType.IBAN: "[IBAN]", PIIType.SWIFT: "[SWIFT/BIC]",
     PIIType.TAX_ID: "[TAX ID]", PIIType.EMPLOYEE_ID: "[EMPLOYEE ID]",
 }
+
+
+def _apply_custom_text_style(value: str, cf: CustomField) -> str:
+    s = cf.redaction_style
+    if s == RedactionStyle.BLACK_BOX or s == RedactionStyle.LABEL:
+        return f"[{cf.name.upper()}]"
+    if s == RedactionStyle.X_MASK:
+        return "X" * min(len(value.strip()), 10)
+    if s == RedactionStyle.ASTERISK:
+        return cf.mask_char * min(len(value.strip()), 10)
+    if s == RedactionStyle.LAST_FOUR:
+        digits = re.sub(r"[^A-Za-z0-9]", "", value)
+        if len(digits) <= cf.visible_suffix:
+            return value
+        return cf.mask_char * min(len(digits) - cf.visible_suffix, 8) + digits[-cf.visible_suffix:]
+    return f"[{cf.name.upper()}]"
 
 
 def _apply_text_style(value: str, pii_type: PIIType, style: RedactionStyle, mask_char: str, visible_suffix: int) -> str:
@@ -110,6 +127,25 @@ def redact_text(req: TextRedactRequest):
         pii_type = PIIType(f["pii_type"])
         replacement = _apply_text_style(f["value"], pii_type, req.redaction_style, req.mask_char, req.visible_suffix)
         redacted = redacted.replace(f["value"], replacement)
+
+    # Custom field pass — each field may have its own style
+    for cf in req.custom_fields:
+        if not cf.pattern.strip():
+            continue
+        if cf.is_regex:
+            try:
+                for m in re.finditer(cf.pattern, redacted):
+                    val = m.group()
+                    replacement = _apply_custom_text_style(val, cf)
+                    redacted = redacted.replace(val, replacement)
+                    findings.append({"pii_type": cf.name, "value": val, "method": "custom"})
+            except re.error:
+                pass
+        else:
+            if cf.pattern in redacted:
+                replacement = _apply_custom_text_style(cf.pattern, cf)
+                findings.append({"pii_type": cf.name, "value": cf.pattern, "method": "custom"})
+                redacted = redacted.replace(cf.pattern, replacement)
 
     return {
         "redacted_text": redacted,

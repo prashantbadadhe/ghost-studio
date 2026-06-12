@@ -6,6 +6,7 @@ import type {
   PIIType,
   DocType,
   RedactionStyle,
+  CustomField,
   PolicyImportRequest,
   PolicyImportResult,
 } from "./types";
@@ -42,6 +43,7 @@ export const redactDocument = (
     redaction_style?: RedactionStyle;
     mask_char?: string;
     visible_suffix?: number;
+    custom_fields?: Omit<CustomField, "_id">[];
   }
 ) =>
   api
@@ -100,6 +102,7 @@ export const redactText = (req: {
   mask_char?: string;
   visible_suffix?: number;
   use_llm?: boolean;
+  custom_fields?: Omit<CustomField, "_id">[];
 }) =>
   api
     .post<{

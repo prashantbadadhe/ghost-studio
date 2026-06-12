@@ -18,8 +18,9 @@ import {
 } from "@/lib/api";
 import {
   DOC_TYPE_LABELS, PII_TYPE_LABELS, REDACTION_STYLE_LABELS,
-  type DocType, type PIIType, type Policy, type RedactionStyle,
+  type DocType, type PIIType, type Policy, type RedactionStyle, type CustomField,
 } from "@/lib/types";
+import CustomFieldsEditor from "@/components/custom-fields-editor";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -162,6 +163,7 @@ export default function UploadPage() {
   const [redactionStyle, setRedactionStyle] = useState<RedactionStyle>("black_box");
   const [maskChar, setMaskChar] = useState("*");
   const [visibleSuffix, setVisibleSuffix] = useState(4);
+  const [customFields, setCustomFields] = useState<CustomField[]>([]);
 
   useEffect(() => {
     if (policies.length && !activePolicy) {
@@ -201,6 +203,7 @@ export default function UploadPage() {
         redaction_style: redactionStyle,
         mask_char: maskChar,
         visible_suffix: visibleSuffix,
+        custom_fields: customFields.map(({ _id, ...cf }) => cf),
       }),
     onSuccess: (res) => {
       setResult(res);
@@ -653,6 +656,11 @@ export default function UploadPage() {
                   </p>
                 </div>
               )}
+            </div>
+
+            {/* Custom Fields */}
+            <div className="p-5 border-b border-border">
+              <CustomFieldsEditor fields={customFields} onChange={setCustomFields} />
             </div>
 
             {/* AI toggle */}

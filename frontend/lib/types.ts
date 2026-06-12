@@ -95,6 +95,17 @@ export interface Policy {
   source_url: string | null;
 }
 
+export interface CustomField {
+  /** Local-only key for React lists — not sent to the backend */
+  _id?: string;
+  name: string;
+  pattern: string;
+  is_regex: boolean;
+  redaction_style: RedactionStyle;
+  mask_char: string;
+  visible_suffix: number;
+}
+
 export interface PolicyImportRequest {
   url: string;
   name_override?: string;
