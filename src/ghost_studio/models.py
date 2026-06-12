@@ -99,6 +99,8 @@ class DocumentRecord(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     redacted_at: datetime | None = None
     error: str | None = None
+    tokens_used: int = 0          # OpenAI tokens consumed during redaction
+    redaction_cost: float = 0.0   # USD cost of the OpenAI call
 
 
 class RedactRequest(BaseModel):

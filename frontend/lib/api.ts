@@ -92,6 +92,23 @@ export const updatePolicy = (id: string, policy: Policy) =>
 export const deletePolicy = (id: string) =>
   api.delete(`/api/policies/${id}`).then((r) => r.data);
 
+// Text redaction
+export const redactText = (req: {
+  text: string;
+  pii_types?: PIIType[];
+  redaction_style?: RedactionStyle;
+  mask_char?: string;
+  visible_suffix?: number;
+  use_llm?: boolean;
+}) =>
+  api
+    .post<{
+      redacted_text: string;
+      findings: { pii_type: string; value: string; method: string }[];
+      tokens_used: number;
+    }>("/api/redact-text", req)
+    .then((r) => r.data);
+
 // Policy import
 export const importPolicyFromUrl = (req: PolicyImportRequest) =>
   api

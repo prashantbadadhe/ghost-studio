@@ -50,6 +50,8 @@ export interface DocumentRecord {
   created_at: string;
   redacted_at: string | null;
   error: string | null;
+  tokens_used: number;
+  redaction_cost: number;
 }
 
 export type RedactionStyle =

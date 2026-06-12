@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Upload, Settings, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Upload, Settings, ChevronRight, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/upload", label: "Upload & Redact", icon: Upload },
+  { href: "/redact-text", label: "Text Redact", icon: FileText },
   { href: "/settings", label: "Policies", icon: Settings },
 ];
 

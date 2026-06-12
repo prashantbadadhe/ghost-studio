@@ -90,7 +90,7 @@ def redact_document(doc_id: str, req: RedactRequest = RedactRequest()):
 
     try:
         pages_text = extract_pages_text(pdf_bytes)
-        matches = detect_pii(pages_text, pii_types, use_llm=req.use_llm)
+        matches, tokens_used, redaction_cost = detect_pii(pages_text, pii_types, use_llm=req.use_llm)
 
         # Style precedence: explicit request > policy default > BLACK_BOX
         from ..models import RedactionStyle
@@ -109,9 +109,17 @@ def redact_document(doc_id: str, req: RedactRequest = RedactRequest()):
         doc.status = DocumentStatus.COMPLETED
         doc.redacted_at = datetime.utcnow()
         doc.page_count = len(pages_text)
+        doc.tokens_used = tokens_used
+        doc.redaction_cost = redaction_cost
         store.documents[doc_id] = doc
 
-        return {"status": "completed", "pii_found": len(matches), "summary": summary}
+        return {
+            "status": "completed",
+            "pii_found": len(matches),
+            "summary": summary,
+            "tokens_used": tokens_used,
+            "redaction_cost": redaction_cost,
+        }
 
     except Exception as exc:
         doc.status = DocumentStatus.FAILED

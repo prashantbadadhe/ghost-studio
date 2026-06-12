@@ -72,7 +72,7 @@ def detect_with_openai(
     pages_text: list[str],
     pii_types: list[PIIType],
     page_offsets: list[int] | None = None,
-) -> list[PIIMatch]:
+) -> tuple[list[PIIMatch], int]:
     """
     Send selected pages to OpenAI GPT-4o-mini and ask it to find all PII.
 
@@ -138,6 +138,8 @@ Document:
             ],
         )
 
+        total_tokens = response.usage.total_tokens if response.usage else 0
+
         raw = response.choices[0].message.content.strip()
         raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.MULTILINE).strip()
 
@@ -167,14 +169,14 @@ Document:
                 log.debug("Skipping malformed finding %s: %s", f, e)
 
         log.info("OpenAI detected %d PII instances across %d page(s)", len(matches), len(pages_text))
-        return matches
+        return matches, total_tokens
 
     except json.JSONDecodeError as e:
         log.error("OpenAI returned invalid JSON: %s", e)
-        return []
+        return [], 0
     except Exception as exc:
         log.error("OpenAI detection error: %s", exc)
-        return []
+        return [], 0
 
 
 # ── Regex (supplement / fallback) ────────────────────────────────────────────
@@ -211,39 +213,41 @@ def detect_regex(
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
+# GPT-4o-mini pricing (per token)
+_INPUT_COST_PER_TOKEN  = 0.150 / 1_000_000   # $0.150 / 1M input tokens
+_OUTPUT_COST_PER_TOKEN = 0.600 / 1_000_000   # $0.600 / 1M output tokens
+
+
 def detect_pii(
     pages_text: list[str],
     pii_types: list[PIIType],
     use_llm: bool = True,
-) -> list[PIIMatch]:
+) -> tuple[list[PIIMatch], int, float]:
     """
-    Detect PII using regex (all pages) + OpenAI (smart-selected pages only).
-
-    Strategy:
-    1. Always run regex across all pages for high-confidence structured patterns.
-    2. If OPENAI_API_KEY is set and use_llm=True:
-       a. Skip pages that are blank / near-blank (< 80 chars).
-       b. Skip LLM entirely if no name/address types are requested.
-       c. Send only the qualifying pages to OpenAI, preserving original page numbers.
-    3. Merge: regex results kept as-is; OpenAI results added for values not
-       already found by regex.
+    Detect PII using regex + optional OpenAI.
+    Returns (matches, total_tokens_used, estimated_cost_usd).
     """
     regex_matches = detect_regex(pages_text, pii_types)
     regex_values: set[str] = {m.value.lower() for m in regex_matches}
 
     openai_matches: list[PIIMatch] = []
+    total_tokens = 0
     if use_llm and os.getenv("OPENAI_API_KEY"):
         llm_pages = _select_llm_pages(pages_text, pii_types)
         if llm_pages:
             page_texts = [t for _, t in llm_pages]
             page_offsets = [i for i, _ in llm_pages]
-            openai_matches = detect_with_openai(page_texts, pii_types, page_offsets)
+            openai_matches, total_tokens = detect_with_openai(page_texts, pii_types, page_offsets)
 
     openai_extra = [m for m in openai_matches if m.value.lower() not in regex_values]
-
     all_matches = regex_matches + openai_extra
+
+    # Approximate cost: treat total_tokens as ~85% input / 15% output (typical for detection)
+    estimated_cost = total_tokens * 0.85 * _INPUT_COST_PER_TOKEN + \
+                     total_tokens * 0.15 * _OUTPUT_COST_PER_TOKEN
+
     log.info(
-        "Detection complete: %d regex + %d OpenAI-only = %d total",
-        len(regex_matches), len(openai_extra), len(all_matches),
+        "Detection complete: %d regex + %d OpenAI-only = %d total | tokens=%d cost=$%.6f",
+        len(regex_matches), len(openai_extra), len(all_matches), total_tokens, estimated_cost,
     )
-    return all_matches
+    return all_matches, total_tokens, estimated_cost
