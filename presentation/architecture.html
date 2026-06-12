@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ghost Studio — Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f9fb; padding: 40px; }
+
+  h1 { font-size: 26px; font-weight: 800; color: #002a6b; letter-spacing: -0.5px; }
+  .subtitle { font-size: 14px; color: #64748b; margin-top: 4px; margin-bottom: 36px; }
+
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr 60px 1fr;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 32px;
+  }
+
+  .layer {
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid #e2e8f0;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .layer-header {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 14px; margin-bottom: 14px;
+    border-bottom: 2px solid;
+  }
+  .layer-icon { font-size: 22px; }
+  .layer-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+  .layer-sub { font-size: 11px; color: #64748b; margin-top: 2px; font-weight: 400; }
+
+  .layer.frontend .layer-header { border-color: #0ea5e9; }
+  .layer.frontend .layer-title { color: #0369a1; }
+  .layer.backend .layer-header { border-color: #0e6bad; }
+  .layer.backend .layer-title { color: #002a6b; }
+  .layer.external .layer-header { border-color: #f59e0b; }
+  .layer.external .layer-title { color: #b45309; }
+
+  .component {
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+    font-size: 12px; border: 1px solid;
+  }
+  .component:last-child { margin-bottom: 0; }
+  .comp-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+  .comp-desc { color: #64748b; font-size: 11px; line-height: 1.4; }
+  .comp-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-top: 4px; }
+
+  .comp-blue { background: #eff6ff; border-color: #bfdbfe; }
+  .comp-blue .comp-name { color: #1d4ed8; }
+  .comp-blue .comp-tag { background: #dbeafe; color: #1d4ed8; }
+
+  .comp-navy { background: #eff6ff; border-color: #93c5fd; }
+  .comp-navy .comp-name { color: #002a6b; }
+
+  .comp-green { background: #f0fdf4; border-color: #bbf7d0; }
+  .comp-green .comp-name { color: #15803d; }
+  .comp-green .comp-tag { background: #dcfce7; color: #15803d; }
+
+  .comp-amber { background: #fffbeb; border-color: #fde68a; }
+  .comp-amber .comp-name { color: #b45309; }
+  .comp-amber .comp-tag { background: #fef3c7; color: #b45309; }
+
+  .comp-purple { background: #faf5ff; border-color: #e9d5ff; }
+  .comp-purple .comp-name { color: #7c3aed; }
+
+  .comp-red { background: #fef2f2; border-color: #fecaca; }
+  .comp-red .comp-name { color: #dc2626; }
+
+  .arrow {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; padding-top: 60px;
+    color: #94a3b8; font-size: 13px; gap: 4px;
+  }
+  .arrow-line { width: 2px; height: 40px; background: #cbd5e1; margin: 0 auto; }
+  .arrow-head { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #94a3b8; }
+  .arrow-label { font-size: 10px; color: #94a3b8; text-align: center; font-weight: 600; letter-spacing: 0.3px; }
+  .arrow-svg { color: #94a3b8; }
+
+  /* Data flow row */
+  .flow-section { margin-top: 32px; }
+  .flow-title { font-size: 16px; font-weight: 800; color: #002a6b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .flow-steps {
+    display: flex; align-items: stretch; gap: 0;
+    background: #fff; border-radius: 12px; border: 1.5px solid #e2e8f0;
+    overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .flow-step {
+    flex: 1; padding: 16px 14px; position: relative;
+    border-right: 1px solid #e2e8f0;
+  }
+  .flow-step:last-child { border-right: none; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: #fff;
+    background: #002a6b; margin-bottom: 8px;
+  }
+  .step-icon { font-size: 20px; margin-bottom: 6px; }
+  .step-name { font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+  .step-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+  .step-tech { font-size: 10px; font-weight: 700; color: #0e6bad; margin-top: 6px; background: #eff6ff; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+
+  .flow-arrow-inline {
+    display: flex; align-items: center; padding: 0; flex-shrink: 0; width: 0;
+    position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  /* Tech stack row */
+  .tech-row {
+    display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;
+  }
+  .tech-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 8px;
+    padding: 8px 14px; font-size: 12px; font-weight: 600; color: #1e293b;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .tech-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .section-divider {
+    border: none; border-top: 1.5px solid #e2e8f0; margin: 28px 0;
+  }
+</style>
+</head>
+<body>
+
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
+  <div style="width:44px;height:44px;background:linear-gradient(135deg,#002a6b,#0e6bad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">👻</div>
+  <div>
+    <h1>Ghost Studio — System Architecture</h1>
+    <div class="subtitle">Enterprise PII Redaction Platform · Banking &amp; Financial Services · JPMorgan Chase Hackathon 2025</div>
+  </div>
+</div>
+
+<!-- 3-column arch -->
+<div class="arch-grid">
+
+  <!-- Frontend -->
+  <div class="layer frontend">
+    <div class="layer-header">
+      <span class="layer-icon">🖥️</span>
+      <div>
+        <div class="layer-title">Frontend</div>
+        <div class="layer-sub">Next.js 16 · App Router · TypeScript</div>
+      </div>
+    </div>
+
+    <div class="component comp-blue">
+      <div class="comp-name">Dashboard</div>
+      <div class="comp-desc">Document table with sortable columns, hide/show, drag-to-reorder. Real-time polling every 10s.</div>
+      <span class="comp-tag">TanStack Query</span>
+    </div>
+
+    <div class="component comp-blue">
+      <div class="comp-name">Upload Wizard</div>
+      <div class="comp-desc">4-step flow: drop file → configure PII types + redaction style → processing → download.</div>
+      <span class="comp-tag">react-dropzone</span>
+    </div>
+
+    <div class="component comp-blue">
+      <div class="comp-name">Document Viewer</div>
+      <div class="comp-desc">Side-by-side original vs. redacted PDF viewer with per-page navigation and PII audit panel.</div>
+      <span class="comp-tag">Base64 PNG</span>
+    </div>
+
+    <div class="component comp-blue">
+      <div class="comp-name">Text Redaction</div>
+      <div class="comp-desc">Paste plain text, choose PII types and style, copy redacted output instantly.</div>
+    </div>
+
+    <div class="component comp-blue">
+      <div class="comp-name">Policy Manager</div>
+      <div class="comp-desc">CRUD for redaction policies. Import from URL. Search across name, PII types, regulations.</div>
+    </div>
+  </div>
+
+  <!-- Arrow 1 -->
+  <div class="arrow">
+    <div class="arrow-label">REST<br>API</div>
+    <div style="display:flex;align-items:center;gap:0;">
+      <svg width="54" height="20" viewBox="0 0 54 20">
+        <line x1="2" y1="10" x2="44" y2="10" stroke="#94a3b8" stroke-width="2"/>
+        <polygon points="44,5 54,10 44,15" fill="#94a3b8"/>
+      </svg>
+    </div>
+    <div class="arrow-label" style="margin-top:4px">JSON /<br>multipart</div>
+  </div>
+
+  <!-- Backend -->
+  <div class="layer backend">
+    <div class="layer-header">
+      <span class="layer-icon">⚙️</span>
+      <div>
+        <div class="layer-title">Backend</div>
+        <div class="layer-sub">FastAPI · Python 3.12 · Uvicorn</div>
+      </div>
+    </div>
+
+    <div class="component comp-navy">
+      <div class="comp-name">Documents Router</div>
+      <div class="comp-desc">Upload, redact, preview pages (PNG), download redacted PDF, delete, audit report endpoints.</div>
+    </div>
+
+    <div class="component comp-navy">
+      <div class="comp-name">PII Detector</div>
+      <div class="comp-desc">Regex patterns for 16 PII types. Optional GPT-4o-mini pass for names &amp; addresses. Returns matches + token cost.</div>
+    </div>
+
+    <div class="component comp-green">
+      <div class="comp-name">PDF Redactor</div>
+      <div class="comp-desc">PyMuPDF (fitz): locates text spans, draws redaction annotations in 5 styles — Black Box, Asterisk, Last 4, X-Mask, Label.</div>
+      <span class="comp-tag">PyMuPDF</span>
+    </div>
+
+    <div class="component comp-purple">
+      <div class="comp-name">Policies Router</div>
+      <div class="comp-desc">GLBA, KYC/BSA, SOX, PCI-DSS built-in policies. Import from URL via AI extraction.</div>
+    </div>
+
+    <div class="component comp-red">
+      <div class="comp-name">In-Memory Store</div>
+      <div class="comp-desc">Singleton: document records, raw PDF bytes, redacted PDF bytes, policies. Swap for PostgreSQL/S3 in prod.</div>
+    </div>
+  </div>
+
+  <!-- Arrow 2 -->
+  <div class="arrow">
+    <div class="arrow-label">HTTPS<br>API</div>
+    <div style="display:flex;align-items:center;">
+      <svg width="54" height="20" viewBox="0 0 54 20">
+        <line x1="2" y1="10" x2="44" y2="10" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5,3"/>
+        <polygon points="44,5 54,10 44,15" fill="#f59e0b"/>
+      </svg>
+    </div>
+    <div class="arrow-label" style="margin-top:4px;color:#b45309;">Optional<br>LLM</div>
+  </div>
+
+  <!-- External -->
+  <div class="layer external">
+    <div class="layer-header">
+      <span class="layer-icon">🤖</span>
+      <div>
+        <div class="layer-title">External AI</div>
+        <div class="layer-sub">OpenAI API · Optional</div>
+      </div>
+    </div>
+
+    <div class="component comp-amber">
+      <div class="comp-name">GPT-4o-mini</div>
+      <div class="comp-desc">Detects names, addresses, and context-dependent PII that regex can't catch. Returns structured JSON matches.</div>
+      <span class="comp-tag">$0.15 / 1M tokens</span>
+    </div>
+
+    <div class="component comp-amber">
+      <div class="comp-name">Token Tracking</div>
+      <div class="comp-desc">Every redaction records tokens_used and USD cost. Displayed per-document in the dashboard.</div>
+    </div>
+
+    <div class="component comp-amber" style="margin-top:12px;">
+      <div class="comp-name">Policy Importer</div>
+      <div class="comp-desc">Fetches regulatory documents from URLs, extracts PII types, doc types, references via GPT-4o-mini. One-click policy creation.</div>
+    </div>
+
+    <div class="component comp-amber" style="margin-top: 8px; background:#fef3c7; border-color:#fcd34d;">
+      <div class="comp-name">⚡ Runs Without AI</div>
+      <div class="comp-desc">All core features work with regex-only detection. No API key required — AI is an enhancement, not a dependency.</div>
+    </div>
+  </div>
+
+</div>
+
+<hr class="section-divider">
+
+<!-- Data Flow Steps -->
+<div class="flow-section">
+  <div class="flow-title">📊 Request Flow — PDF Redaction</div>
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-icon">📤</div>
+      <div class="step-name">Upload</div>
+      <div class="step-desc">User drops PDF. Multipart POST to /api/documents/upload. Raw bytes stored in memory.</div>
+      <span class="step-tech">multipart/form-data</span>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-icon">🔍</div>
+      <div class="step-name">Detect PII</div>
+      <div class="step-desc">PyMuPDF extracts text per page. 16 regex patterns run first. Optional GPT-4o-mini pass for names/addresses.</div>
+      <span class="step-tech">fitz + OpenAI</span>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-icon">✂️</div>
+      <div class="step-name">Redact</div>
+      <div class="step-desc">add_redact_annot() draws annotations on matched spans. apply_redactions() burns them in. Style applied per config.</div>
+      <span class="step-tech">PyMuPDF</span>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-icon">🖼️</div>
+      <div class="step-name">Preview</div>
+      <div class="step-desc">Each page rendered to PNG at 2× resolution via fitz.Matrix(2,2). Returned as base64 — no temp files needed.</div>
+      <span class="step-tech">base64 PNG</span>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-icon">📥</div>
+      <div class="step-name">Download</div>
+      <div class="step-desc">Redacted PDF bytes streamed as application/pdf. Original bytes never leave the server.</div>
+      <span class="step-tech">StreamingResponse</span>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- Tech stack chips -->
+<div style="font-size:13px;font-weight:800;color:#002a6b;margin-bottom:12px;">🛠 Tech Stack</div>
+<div class="tech-row">
+  <div class="tech-chip"><div class="dot" style="background:#0ea5e9"></div>Next.js 16 (App Router)</div>
+  <div class="tech-chip"><div class="dot" style="background:#3178c6"></div>TypeScript</div>
+  <div class="tech-chip"><div class="dot" style="background:#f59e0b"></div>TanStack Query</div>
+  <div class="tech-chip"><div class="dot" style="background:#8764b8"></div>shadcn/ui + @base-ui/react</div>
+  <div class="tech-chip"><div class="dot" style="background:#009688"></div>FastAPI + Uvicorn</div>
+  <div class="tech-chip"><div class="dot" style="background:#3572a5"></div>Python 3.12</div>
+  <div class="tech-chip"><div class="dot" style="background:#e44d26"></div>PyMuPDF (fitz)</div>
+  <div class="tech-chip"><div class="dot" style="background:#10a37f"></div>OpenAI GPT-4o-mini</div>
+  <div class="tech-chip"><div class="dot" style="background:#2496ed"></div>Docker Compose</div>
+  <div class="tech-chip"><div class="dot" style="background:#4a9e5c"></div>uv (Python packaging)</div>
+</div>
+
+</body>
+</html>

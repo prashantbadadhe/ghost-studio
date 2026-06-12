@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ghost Studio — Technical Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8f9fb; padding: 40px; color: #1e293b; }
+
+  h1 { font-size: 26px; font-weight: 800; color: #002a6b; letter-spacing: -0.5px; }
+  .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; margin-bottom: 32px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-size: 16px; font-weight: 800; color: #002a6b;
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px;
+  }
+
+  /* ── Feature cards grid ── */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card {
+    background: #fff; border-radius: 10px; padding: 16px;
+    border: 1.5px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .card-icon { font-size: 22px; margin-bottom: 8px; }
+  .card-title { font-size: 13px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+  .card-desc { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .card-tag {
+    display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .tag-blue { background: #dbeafe; color: #1d4ed8; }
+  .tag-green { background: #dcfce7; color: #15803d; }
+  .tag-amber { background: #fef3c7; color: #b45309; }
+  .tag-purple { background: #ede9fe; color: #7c3aed; }
+  .tag-navy { background: #dbeafe; color: #002a6b; }
+  .tag-red { background: #fee2e2; color: #dc2626; }
+
+  /* ── PII table ── */
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  th { background: #002a6b; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; font-size: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .pii-type { font-weight: 700; color: #002a6b; }
+  .detection-badge {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .regex { background: #dcfce7; color: #15803d; }
+  .llm { background: #fef3c7; color: #b45309; }
+  .both { background: #ede9fe; color: #7c3aed; }
+  .heuristic { background: #f1f5f9; color: #475569; }
+
+  /* ── Redaction style comparison ── */
+  .style-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .style-card {
+    background: #fff; border-radius: 10px; border: 1.5px solid #e2e8f0;
+    padding: 14px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .style-example {
+    font-family: 'Courier New', monospace; font-size: 13px;
+    background: #f8fafc; border-radius: 6px; padding: 8px;
+    margin: 8px 0; border: 1px solid #e2e8f0; color: #1e293b; min-height: 36px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .style-example.black { background: #1e293b; color: #1e293b; border-radius: 4px; }
+  .style-name { font-size: 12px; font-weight: 800; color: #1e293b; }
+  .style-use { font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4; }
+
+  /* ── Compliance table ── */
+  .compliance-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .compliance-card {
+    background: #fff; border-radius: 10px; padding: 14px 16px;
+    border: 1.5px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .law-name { font-size: 12px; font-weight: 800; color: #002a6b; margin-bottom: 4px; }
+  .law-citation { font-size: 10px; color: #64748b; margin-bottom: 6px; font-style: italic; }
+  .law-point { font-size: 11px; color: #334155; line-height: 1.6; }
+
+  /* ── API endpoints ── */
+  .endpoint { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+  .endpoint:last-child { border-bottom: none; }
+  .method { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; font-family: monospace; flex-shrink: 0; }
+  .get { background: #dcfce7; color: #15803d; }
+  .post { background: #dbeafe; color: #1d4ed8; }
+  .del { background: #fee2e2; color: #dc2626; }
+  .put { background: #fef3c7; color: #b45309; }
+  .path { font-size: 12px; font-family: 'Courier New', monospace; color: #0e6bad; flex-shrink: 0; }
+  .ep-desc { font-size: 11px; color: #64748b; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, #002a6b, #0e6bad);
+    color: #fff; border-radius: 12px; padding: 20px 24px;
+    display: flex; align-items: center; gap: 20px; margin-bottom: 28px;
+  }
+  .highlight-box .big-icon { font-size: 40px; }
+  .highlight-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .highlight-box p { font-size: 13px; opacity: 0.9; line-height: 1.6; }
+
+  .metric-row { display: flex; gap: 16px; margin-bottom: 28px; }
+  .metric { flex: 1; background: #fff; border-radius: 10px; border: 1.5px solid #e2e8f0; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center; }
+  .metric-val { font-size: 28px; font-weight: 800; color: #002a6b; line-height: 1; }
+  .metric-label { font-size: 11px; color: #64748b; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
+  <div style="width:44px;height:44px;background:linear-gradient(135deg,#002a6b,#0e6bad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;">👻</div>
+  <div>
+    <h1>Ghost Studio — Technical Flow &amp; Feature Reference</h1>
+    <div class="subtitle">Engineering deep-dive · JPMorgan Chase Hackathon 2025</div>
+  </div>
+</div>
+
+<!-- Metrics row -->
+<div class="metric-row">
+  <div class="metric"><div class="metric-val">16</div><div class="metric-label">PII Types Detected</div></div>
+  <div class="metric"><div class="metric-val">5</div><div class="metric-label">Redaction Styles</div></div>
+  <div class="metric"><div class="metric-val">4</div><div class="metric-label">Built-in Compliance Policies</div></div>
+  <div class="metric"><div class="metric-val">&lt;3s</div><div class="metric-label">Avg. Redaction Time</div></div>
+  <div class="metric"><div class="metric-val">$0</div><div class="metric-label">Cost Without AI Key</div></div>
+</div>
+
+<!-- ── PII Detection ── -->
+<div class="section">
+  <div class="section-title">🔍 PII Detection Engine</div>
+  <table>
+    <thead>
+      <tr>
+        <th>PII Type</th>
+        <th>Example</th>
+        <th>Detection</th>
+        <th>Regex Pattern (simplified)</th>
+        <th>Use Case</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td class="pii-type">Social Security Number</td><td><code>123-45-6789</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>\d{3}-\d{2}-\d{4}</code></td><td>Tax forms, KYC docs</td></tr>
+      <tr><td class="pii-type">Account Number</td><td><code>4523789012345678</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>\b\d{10,18}\b</code></td><td>Bank statements</td></tr>
+      <tr><td class="pii-type">Routing Number</td><td><code>021000021</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>\b[0-9]{9}\b</code></td><td>Wires, ACH</td></tr>
+      <tr><td class="pii-type">Credit Card</td><td><code>4111 1111 1111 1111</code></td><td><span class="detection-badge regex">Regex</span></td><td>Luhn-valid 13–19 digit</td><td>Transaction records</td></tr>
+      <tr><td class="pii-type">Email Address</td><td><code>alice@jpmorgan.com</code></td><td><span class="detection-badge regex">Regex</span></td><td>RFC 5321 pattern</td><td>All documents</td></tr>
+      <tr><td class="pii-type">Phone Number</td><td><code>(415) 555-0182</code></td><td><span class="detection-badge regex">Regex</span></td><td>US + intl. formats</td><td>KYC, statements</td></tr>
+      <tr><td class="pii-type">Date of Birth</td><td><code>1985-03-22</code></td><td><span class="detection-badge regex">Regex</span></td><td>ISO 8601 + common formats</td><td>Onboarding forms</td></tr>
+      <tr><td class="pii-type">Passport Number</td><td><code>P12345678</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>[A-Z]\d{8}</code></td><td>KYC, AML</td></tr>
+      <tr><td class="pii-type">Driver's License</td><td><code>IL-D456-7890-1234</code></td><td><span class="detection-badge regex">Regex</span></td><td>State-specific patterns</td><td>Identity docs</td></tr>
+      <tr><td class="pii-type">Tax ID / EIN</td><td><code>82-4471039</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>\d{2}-\d{7}</code></td><td>Financial reports</td></tr>
+      <tr><td class="pii-type">Employee ID</td><td><code>EMP-00391</code></td><td><span class="detection-badge regex">Regex</span></td><td><code>EMP-\d{5}</code></td><td>Audit reports, HR</td></tr>
+      <tr><td class="pii-type">IBAN</td><td><code>GB29NWBK60161331926819</code></td><td><span class="detection-badge regex">Regex</span></td><td>ISO 13616 format</td><td>International wire</td></tr>
+      <tr><td class="pii-type">SWIFT / BIC</td><td><code>CHASUS33</code></td><td><span class="detection-badge regex">Regex</span></td><td>8 or 11 char BIC</td><td>Correspondent banking</td></tr>
+      <tr><td class="pii-type">IP Address</td><td><code>192.168.1.100</code></td><td><span class="detection-badge regex">Regex</span></td><td>IPv4 + IPv6</td><td>Audit logs</td></tr>
+      <tr><td class="pii-type">Full Name</td><td><code>Michael Johnson</code></td><td><span class="detection-badge both">Regex + LLM</span></td><td>Title-case bigrams + context</td><td>All documents</td></tr>
+      <tr><td class="pii-type">Address</td><td><code>415 Maple Ave, SF 94102</code></td><td><span class="detection-badge llm">LLM</span></td><td>GPT-4o-mini structured output</td><td>KYC, statements</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── Redaction Styles ── -->
+<div class="section">
+  <div class="section-title">🎨 Redaction Styles</div>
+  <div class="style-grid">
+    <div class="style-card">
+      <div class="style-name">Black Box</div>
+      <div class="style-example black">████████</div>
+      <div class="style-use">Solid black rectangle. PDF only. Maximum concealment. Standard compliance.</div>
+      <span class="detection-badge regex" style="margin-top:6px;display:inline-block">PDF</span>
+    </div>
+    <div class="style-card">
+      <div class="style-name">Asterisk</div>
+      <div class="style-example">••••••••</div>
+      <div class="style-use">Mask char (configurable). Length preserved. Indicates redacted field clearly.</div>
+      <span class="detection-badge both" style="margin-top:6px;display:inline-block">PDF + Text</span>
+    </div>
+    <div class="style-card">
+      <div class="style-name">Last 4 Digits</div>
+      <div class="style-example">****6789</div>
+      <div class="style-use">PCI DSS compliant for card/account numbers. Visible suffix count is configurable.</div>
+      <span class="detection-badge both" style="margin-top:6px;display:inline-block">PDF + Text</span>
+    </div>
+    <div class="style-card">
+      <div class="style-name">X-Mask</div>
+      <div class="style-example">XXXXXXXX</div>
+      <div class="style-use">Capital X characters. Clearly machine-generated placeholder. Audit-friendly.</div>
+      <span class="detection-badge both" style="margin-top:6px;display:inline-block">PDF + Text</span>
+    </div>
+    <div class="style-card">
+      <div class="style-name">Label</div>
+      <div class="style-example">[SSN]</div>
+      <div class="style-use">Typed placeholder. Shows what was there without revealing value. Great for debugging.</div>
+      <span class="detection-badge both" style="margin-top:6px;display:inline-block">PDF + Text</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── API + Compliance in 2 col ── -->
+<div class="two-col">
+
+  <!-- API Endpoints -->
+  <div class="section">
+    <div class="section-title">🔌 API Endpoints</div>
+    <div style="background:#fff;border-radius:10px;border:1.5px solid #e2e8f0;padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.05)">
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/documents/upload</span>
+        <span class="ep-desc">Ingest PDF, store bytes</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/documents/{id}/redact</span>
+        <span class="ep-desc">Detect PII + apply redaction style</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/documents/{id}/preview/{page}</span>
+        <span class="ep-desc">Original page as base64 PNG</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/documents/{id}/redacted-preview/{page}</span>
+        <span class="ep-desc">Redacted page as base64 PNG</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/documents/{id}/download-redacted</span>
+        <span class="ep-desc">Stream redacted PDF</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/documents/{id}/report</span>
+        <span class="ep-desc">JSON audit trail per PII type</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/redact-text</span>
+        <span class="ep-desc">Redact plain text, return result</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/policies/</span>
+        <span class="ep-desc">List all compliance policies</span>
+      </div>
+      <div class="endpoint">
+        <span class="method post">POST</span>
+        <span class="path">/api/policies/import-from-url</span>
+        <span class="ep-desc">AI-extract policy from URL</span>
+      </div>
+      <div class="endpoint">
+        <span class="method get">GET</span>
+        <span class="path">/api/stats/</span>
+        <span class="ep-desc">Dashboard metrics</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance -->
+  <div class="section">
+    <div class="section-title">⚖️ Compliance Coverage</div>
+    <div class="compliance-grid">
+      <div class="compliance-card">
+        <div class="law-name">GLBA Safeguards Rule</div>
+        <div class="law-citation">16 CFR Part 314 · § 314.4(c)</div>
+        <div class="law-point">Bank statements — SSN, account numbers, routing, names, addresses, phone must be protected.</div>
+      </div>
+      <div class="compliance-card">
+        <div class="law-name">BSA / FinCEN CDD Rule</div>
+        <div class="law-citation">31 CFR § 1020.220 · § 1010.230</div>
+        <div class="law-point">KYC forms — name, DOB, address, govt ID must be safeguarded from unauthorized disclosure.</div>
+      </div>
+      <div class="compliance-card">
+        <div class="law-name">PCI DSS v4.0</div>
+        <div class="law-citation">Req. 3.3.1 · Req. 3.5.1</div>
+        <div class="law-point">Full PANs must be masked. Last-4-digits style enforces PCI DSS in developer-facing docs.</div>
+      </div>
+      <div class="compliance-card">
+        <div class="law-name">SOX §§ 302 / 404</div>
+        <div class="law-citation">15 U.S.C. § 7241, § 7262</div>
+        <div class="law-point">Audit reports — tax IDs, employee IDs, account numbers redacted before external sharing.</div>
+      </div>
+      <div class="compliance-card">
+        <div class="law-name">FCRA</div>
+        <div class="law-citation">15 U.S.C. § 1681b, § 1681e</div>
+        <div class="law-point">Consumer report data may not be re-disclosed. SSN, DOB, credit data protected.</div>
+      </div>
+      <div class="compliance-card">
+        <div class="law-name">IRS Pub. 1075</div>
+        <div class="law-citation">Section 9.3 · Exhibit 7</div>
+        <div class="law-point">FTI (EINs, SSNs in tax records) must be redacted before sharing with non-authorized parties.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features grid -->
+<div class="section">
+  <div class="section-title">✨ Key Features</div>
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">🔄</div>
+      <div class="card-title">Side-by-Side Viewer</div>
+      <div class="card-desc">Original and redacted PDFs rendered per-page as PNG. Navigate pages, switch between Original / Redacted / Side-by-Side views.</div>
+      <span class="card-tag tag-blue">PyMuPDF</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Policy Management</div>
+      <div class="card-desc">4 built-in compliance policies (GLBA, KYC, SOX, PCI). Create custom policies. Import regulations from URL via AI extraction.</div>
+      <span class="card-tag tag-navy">Compliance</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📝</div>
+      <div class="card-title">Text Redaction</div>
+      <div class="card-desc">Paste any text, select PII types and style, copy the redacted output. Same detection engine as PDF flow.</div>
+      <span class="card-tag tag-green">Clipboard</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Dashboard Analytics</div>
+      <div class="card-desc">Token usage and cost per document. Sortable, filterable table. Hide/show and drag-to-reorder columns.</div>
+      <span class="card-tag tag-amber">Real-time</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">AI-Assisted Detection</div>
+      <div class="card-desc">GPT-4o-mini for context-aware name and address detection. Per-document token usage and cost tracked and displayed.</div>
+      <span class="card-tag tag-amber">Optional</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🐳</div>
+      <div class="card-title">One-Command Deploy</div>
+      <div class="card-desc"><code>./start.sh</code> — Docker Compose spins up backend + frontend. Runs anywhere in under 60 seconds.</div>
+      <span class="card-tag tag-purple">Docker</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
