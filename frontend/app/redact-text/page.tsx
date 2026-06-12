@@ -20,7 +20,8 @@ const ALL_PII: PIIType[] = [
   "name", "address", "ip_address", "iban", "swift", "tax_id", "employee_id",
 ];
 
-const STYLES: RedactionStyle[] = ["black_box", "asterisk", "last_four", "x_mask", "label"];
+// black_box is PDF-only (draws a rectangle); text redaction uses the other 4 styles
+const STYLES: RedactionStyle[] = ["label", "asterisk", "last_four", "x_mask"];
 
 export default function TextRedactPage() {
   const [inputText, setInputText] = useState("");
@@ -31,7 +32,7 @@ export default function TextRedactPage() {
   const [selectedPII, setSelectedPII] = useState<Set<PIIType>>(
     new Set(["ssn", "account_number", "routing_number", "credit_card", "email", "phone", "dob"])
   );
-  const [redactionStyle, setRedactionStyle] = useState<RedactionStyle>("black_box");
+  const [redactionStyle, setRedactionStyle] = useState<RedactionStyle>("label");
   const [maskChar, setMaskChar] = useState("*");
   const [visibleSuffix, setVisibleSuffix] = useState(4);
   const [useLLM, setUseLLM] = useState(false);

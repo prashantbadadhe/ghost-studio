@@ -400,7 +400,7 @@ export default function DocumentTable({ documents, loading }: Props) {
               </span>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="p-0">
+          <DropdownMenuContent align="end" className="p-0 w-auto min-w-[224px]">
             <ColumnSettings
               order={colOrder}
               visible={visibleCols}
